@@ -1,6 +1,7 @@
 use std::fmt::Error;
 
 use rusb::DeviceDescriptor;
+use rusb::RequestType;
 
 pub struct UsbReader<'a> {
     device_name: &'a str,
@@ -14,6 +15,16 @@ impl<'a> UsbReader<'a> {
         let device_names: Vec<String> = device_list
             .iter()
             .map(|device| {
+                println!("device: {device:?}");
+                device.open().expect("fail to open").read_control(
+                    RequestType::Standard,
+                    request,
+                    value,
+                    index,
+                    buf,
+                    timeout,
+                );
+
                 let device_descriptor = device
                     .device_descriptor()
                     .expect("could not get device descriptor")
@@ -29,6 +40,7 @@ impl<'a> UsbReader<'a> {
                 device_name.trim().to_string()
             })
             .collect();
+        println!("{device_names:?}");
         println!("not implemented yet");
         Self { device_name }
     }
