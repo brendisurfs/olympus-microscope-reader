@@ -2,14 +2,20 @@ use std::fmt::Error;
 
 use rusb::DeviceDescriptor;
 
-pub struct UsbReader;
+pub struct UsbReader<'a> {
+    device_name: &'a str,
+}
 
-impl UsbReader {
-    pub fn new() -> Self {
-        Self
+impl<'a> UsbReader<'a> {
+    pub fn new(device_name: &'a str) -> Self {
+        Self { device_name }
     }
 
     pub fn get_serial_num(&self) -> Result<String, String> {
+        let device_list = match rusb::devices() {
+            Ok(devices) => devices,
+            Err(why) => panic!("could not find devices: {why}"),
+        };
         Ok("not implemented".to_string())
     }
 
