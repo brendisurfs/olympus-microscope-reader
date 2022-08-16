@@ -37,9 +37,11 @@ impl<'a> UsbReader<'a> {
     pub fn get_serial_num(&self) -> Result<Vec<String>, &'static str> {
         let device_list = rusb::devices().expect("could not read devices");
 
-        let device_serials: Vec<String> = device_list
+        let opened_devices = device_list
             .iter()
-            .map(|x| x.open().expect("could not open device"))
+            .map(|x| x.open().expect("could not open device"));
+
+        let device_serials: Vec<String> = opened_devices
             .map(|device| {
                 let internal_device = device
                     .device()
