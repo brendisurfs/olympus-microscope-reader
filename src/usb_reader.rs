@@ -1,4 +1,5 @@
 use std::fmt::Error;
+use std::io::BufRead;
 
 use rusb::DeviceDescriptor;
 use rusb::DeviceHandle;
@@ -22,11 +23,41 @@ impl<'a> UsbReader<'a> {
             Err(why) => panic!("could not find devices: {why}"),
         };
 
-        let devices_opened: Vec<DeviceHandle<_>> = device_list
+        let device_serials: Vec<String> = device_list
             .iter()
             .map(|x| x.open().expect("could not open device"))
+            .map(|device| {
+                let internal_device = device
+                    .device()
+                    .device_descriptor()
+                    .expect("could not read device descriptor");
+                match device.read_serial_number_string_ascii(&internal_device) {
+                    Ok(serial) => serial,
+                    Err(_) => "NO SERIAL".to_string(),
+                }
+            })
             .collect();
-        println!("{:?}", devices_opened);
+
+        let device_names: Vec<String> = device_list
+            .iter()
+            .map(|device| {
+                let device_descriptor = device
+                    .device_descriptor()
+                    .expect("could not get device descriptor")
+                    .product_string_index()
+                    .expect("could not get device name");
+
+                let device_name = device
+                    .open()
+                    .unwrap()
+                    .read_string_descriptor_ascii(device_descriptor)
+                    .expect("could not read string device descriptor");
+
+                device_name.trim().to_string()
+            })
+            .collect();
+
+        println!("device names: {:?}", device_names);
         Ok("not implemented".to_string())
     }
 
