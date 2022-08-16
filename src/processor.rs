@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use rusb::DeviceHandle;
 use rusb::RequestType;
 
 /// Processor - does most of the transforming.
@@ -25,14 +26,14 @@ impl Processor {
             );
             let reader_timeout = Duration::from_secs(1);
             //     // this is where we will read into a buf
-            device.open().expect("fail to open").read_control(
-                read_request_type,
-                request,
-                value,
-                index,
-                &mut reader_buffer,
-                reader_timeout,
-            );
+            // device.open().expect("fail to open").read_control(
+            //     read_request_type,
+            //     request,
+            //     value,
+            //     0,
+            //     &mut reader_buffer,
+            //     reader_timeout,
+            // );
         });
         vec![1, 2, 3]
     }

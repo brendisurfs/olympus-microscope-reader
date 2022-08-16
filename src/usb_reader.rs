@@ -1,13 +1,44 @@
 use std::fmt::Error;
 
+use rusb::Device;
 use rusb::DeviceDescriptor;
+use rusb::DeviceHandle;
 use rusb::RequestType;
+use rusb::UsbContext;
 
 pub struct UsbReader<'a> {
     device_name: &'a str,
 }
 
 impl<'a> UsbReader<'a> {
+    //
+    pub fn open_device<T: UsbContext>(
+        ctx: &mut T,
+        vid: u16,
+        pid: u16,
+    ) -> Option<(Device<T>, DeviceHandle<T>)> {
+        let devices = match ctx.devices() {
+            Ok(d) => d,
+            Err(_) => return None,
+        };
+
+        for device in devices.iter() {
+            let desc = match device.device_descriptor() {
+                Ok(dv) => dv,
+                Err(_) => continue,
+            };
+
+            // match up the device with the passed in pid and vendor id
+            if desc.vendor_id() == vid && desc.product_id() == pid {
+                match device.open() {
+                    Ok(handle) => Some((device, handle)),
+                    Err(_) => continue,
+                };
+            }
+        }
+        None
+    }
+
     // find_device - finds the specific device from the device list.
     // not implemented yet.
     pub fn find_device(device_name: &'a str) -> Self {
@@ -16,15 +47,6 @@ impl<'a> UsbReader<'a> {
             .iter()
             .map(|device| {
                 println!("device: {device:?}");
-                device.open().expect("fail to open").read_control(
-                    RequestType::Standard,
-                    request,
-                    value,
-                    index,
-                    buf,
-                    timeout,
-                );
-
                 let device_descriptor = device
                     .device_descriptor()
                     .expect("could not get device descriptor")
