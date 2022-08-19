@@ -1,17 +1,13 @@
-use std::fmt::Error;
 use std::time::Duration;
 
 use rusb::Device;
-use rusb::DeviceDescriptor;
 use rusb::DeviceHandle;
 use rusb::Result;
 use rusb::UsbContext;
 
-pub struct UsbReader<'a> {
-    device_name: &'a str,
-}
+pub struct UsbReader;
 
-impl<'a> UsbReader<'a> {
+impl UsbReader {
     //
     pub fn open_device<T: UsbContext>(
         ctx: &mut T,
@@ -25,7 +21,7 @@ impl<'a> UsbReader<'a> {
 
         for device in devices.iter() {
             let desc = match device.device_descriptor() {
-                Ok(dv) => dv,
+                Ok(descriptor_value) => descriptor_value,
                 Err(_) => continue,
             };
 
@@ -35,7 +31,7 @@ impl<'a> UsbReader<'a> {
                     Ok(handle) => Some((device, handle)),
                     Err(_) => continue,
                 };
-            }
+            };
         }
         None
     }
@@ -69,44 +65,6 @@ impl<'a> UsbReader<'a> {
                 .unwrap_or("Serial Num Not Found".to_string());
         }
 
-        Ok(())
-    }
-
-    // find_device - finds the specific device from the device list.
-    // not implemented yet.
-    pub fn find_device(device_name: &'a str) -> Self {
-        let device_list = rusb::devices().expect("could not read devices");
-        let device_names: Vec<String> = device_list
-            .iter()
-            .map(|device| {
-                println!("device: {device:?}");
-                let device_descriptor = device
-                    .device_descriptor()
-                    .expect("could not get device descriptor")
-                    .product_string_index()
-                    .expect("could not get device name");
-
-                let device_name = device
-                    .open()
-                    .unwrap()
-                    .read_string_descriptor_ascii(device_descriptor)
-                    .expect("could not read string device descriptor");
-
-                device_name.trim().to_string()
-            })
-            .collect();
-        println!("{device_names:?}");
-        println!("not implemented yet");
-        Self { device_name }
-    }
-
-    /// read_camera_name - reads the cameras name, using the device descriptor.
-    pub fn read_camera_name(&self, descriptor: DeviceDescriptor) -> Result<String, String> {
-        Ok("not implemented".to_string())
-    }
-
-    // get the device descriptor from the USB device, to be passed to self.
-    pub fn get_device_descriptor(&self) -> Result<(), Error> {
         Ok(())
     }
 }
