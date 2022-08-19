@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use rusb::Device;
 use rusb::DeviceHandle;
+use rusb::GlobalContext;
 use rusb::Result;
 use rusb::UsbContext;
 
@@ -9,31 +10,22 @@ pub struct UsbReader;
 
 impl UsbReader {
     //
-    pub fn open_device<T: UsbContext>(
-        ctx: &mut T,
+    pub fn open_device(
         vid: u16,
         pid: u16,
-    ) -> Option<(Device<T>, DeviceHandle<T>)> {
-        let devices = match ctx.devices() {
-            Ok(d) => d,
-            Err(_) => return None,
+    ) -> Option<(Device<GlobalContext>, DeviceHandle<GlobalContext>)> {
+        let device_ctx = match rusb::open_device_with_vid_pid(vid, pid) {
+            Some(info) => info,
+            None => panic!("could not get device info from vid and pid"),
         };
-
-        for device in devices.iter() {
-            let desc = match device.device_descriptor() {
-                Ok(descriptor_value) => descriptor_value,
-                Err(_) => continue,
-            };
-
-            // match up the device with the passed in pid and vendor id
-            if desc.vendor_id() == vid && desc.product_id() == pid {
-                match device.open() {
-                    Ok(handle) => Some((device, handle)),
-                    Err(_) => continue,
-                };
-            };
+        let device = device_ctx.device();
+        match device.open() {
+            Ok(handle) => Some((device, handle)),
+            Err(why) => {
+                println!("{why}");
+                None
+            }
         }
-        None
     }
 
     /// get_device_info - retrieves information from the usb device we are targeting
@@ -41,9 +33,11 @@ impl UsbReader {
     // NOTE: this should return a result of a struct for all the data we need.
     #[allow(clippy::or_fun_call)]
     pub fn get_device_info<T: UsbContext>(handle: &mut DeviceHandle<T>) -> Result<()> {
-        let device_desc = handle.device().device_descriptor()?;
+        handle.reset()?;
+
         let timeout = Duration::from_secs(1);
         let langs = handle.read_languages(timeout)?;
+        let device_desc = handle.device().device_descriptor()?;
 
         println!("config: {}", handle.active_configuration()?);
 
