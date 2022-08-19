@@ -1,12 +1,15 @@
 use std::time::Duration;
 
-use rusb::DeviceHandle;
 use rusb::RequestType;
 
 /// Processor - does most of the transforming.
 /// THis will be mostly reading in [u8] streams and outputing to somewhere else,
 /// probably to rtsp.
 pub struct Processor;
+
+const REQUEST: u8 = 0x0A;
+const VALUE: u16 = 0x0000;
+const INDEX: u16 = 0x0000;
 
 impl Processor {
     // read the byte stream from the camera, convert to pixel data in this impl.
@@ -26,14 +29,14 @@ impl Processor {
             );
             let reader_timeout = Duration::from_secs(1);
             //     // this is where we will read into a buf
-            // device.open().expect("fail to open").read_control(
-            //     read_request_type,
-            //     request,
-            //     value,
-            //     0,
-            //     &mut reader_buffer,
-            //     reader_timeout,
-            // );
+            device.open().expect("fail to open").read_control(
+                read_request_type,
+                REQUEST,
+                VALUE,
+                INDEX,
+                &mut reader_buffer,
+                reader_timeout,
+            );
         });
         vec![1, 2, 3]
     }

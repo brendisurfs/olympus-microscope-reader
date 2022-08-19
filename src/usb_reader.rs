@@ -1,9 +1,10 @@
 use std::fmt::Error;
+use std::time::Duration;
 
 use rusb::Device;
 use rusb::DeviceDescriptor;
 use rusb::DeviceHandle;
-use rusb::RequestType;
+use rusb::Result;
 use rusb::UsbContext;
 
 pub struct UsbReader<'a> {
@@ -39,6 +40,38 @@ impl<'a> UsbReader<'a> {
         None
     }
 
+    /// get_device_info - retrieves information from the usb device we are targeting
+    /// (the microscope)
+    // NOTE: this should return a result of a struct for all the data we need.
+    pub fn get_device_info<T: UsbContext>(handle: &mut DeviceHandle<T>) -> Result<()> {
+        let device_desc = handle.device().device_descriptor()?;
+        let timeout = Duration::from_secs(1);
+        let langs = handle.read_languages(timeout)?;
+
+        println!("config: {}", handle.active_configuration()?);
+
+        // check if something is in languages
+        if !langs.is_empty() {
+            let language = langs[0];
+            println!("Language: {language:?}");
+
+            let mfg_info = handle
+                .read_manufacturer_string(language, &device_desc, timeout)
+                .unwrap_or("Manufacturer Not Found".to_string());
+            println!("{}", mfg_info);
+
+            let product_info = handle
+                .read_product_string(language, &device_desc, timeout)
+                .unwrap_or("Product Info Not Found".to_string());
+
+            let serial_num = handle
+                .read_serial_number_string(language, &device_desc, timeout)
+                .unwrap_or("Serial Num Not Found".to_string());
+        }
+
+        Ok(())
+    }
+
     // find_device - finds the specific device from the device list.
     // not implemented yet.
     pub fn find_device(device_name: &'a str) -> Self {
@@ -65,30 +98,6 @@ impl<'a> UsbReader<'a> {
         println!("{device_names:?}");
         println!("not implemented yet");
         Self { device_name }
-    }
-
-    // get_serial_num - gets the serial number from the device selected.
-    pub fn get_serial_num(&self) -> Result<Vec<String>, &'static str> {
-        let device_list = rusb::devices().expect("could not read devices");
-
-        let opened_devices = device_list
-            .iter()
-            .map(|x| x.open().expect("could not open device"));
-
-        let device_serials: Vec<String> = opened_devices
-            .map(|device| {
-                let internal_device = device
-                    .device()
-                    .device_descriptor()
-                    .expect("could not read device descriptor");
-                match device.read_serial_number_string_ascii(&internal_device) {
-                    Ok(serial) => serial,
-                    Err(_) => "NO SERIAL".to_string(),
-                }
-            })
-            .collect();
-
-        Ok(device_serials)
     }
 
     /// read_camera_name - reads the cameras name, using the device descriptor.
