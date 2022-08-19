@@ -39,6 +39,7 @@ impl UsbReader {
     /// get_device_info - retrieves information from the usb device we are targeting
     /// (the microscope)
     // NOTE: this should return a result of a struct for all the data we need.
+    #[allow(clippy::or_fun_call)]
     pub fn get_device_info<T: UsbContext>(handle: &mut DeviceHandle<T>) -> Result<()> {
         let device_desc = handle.device().device_descriptor()?;
         let timeout = Duration::from_secs(1);
@@ -49,12 +50,10 @@ impl UsbReader {
         // check if something is in languages
         if !langs.is_empty() {
             let language = langs[0];
-            println!("Language: {language:?}");
 
             let mfg_info = handle
                 .read_manufacturer_string(language, &device_desc, timeout)
                 .unwrap_or("Manufacturer Not Found".to_string());
-            println!("{}", mfg_info);
 
             let product_info = handle
                 .read_product_string(language, &device_desc, timeout)
@@ -63,6 +62,8 @@ impl UsbReader {
             let serial_num = handle
                 .read_serial_number_string(language, &device_desc, timeout)
                 .unwrap_or("Serial Num Not Found".to_string());
+
+            println!("language: {language:?}\n mfg info: {mfg_info}\n product info: {product_info}\n serial num: {serial_num}");
         }
 
         Ok(())
