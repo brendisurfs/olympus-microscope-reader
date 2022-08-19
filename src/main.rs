@@ -22,7 +22,6 @@ fn main() -> Result<()> {
     //
     let (mut device, mut handle) =
         UsbReader::open_device(VID, PID).expect("could not open usb device, will not run");
-    println!("{:?}", handle);
 
     UsbReader::get_device_info(&mut handle)?;
     Ok(())

@@ -44,6 +44,7 @@ impl UsbReader {
         // check if something is in languages
         if !langs.is_empty() {
             let language = langs[0];
+            let primary_lang = language.primary_language();
 
             let mfg_info = handle
                 .read_manufacturer_string(language, &device_desc, timeout)
@@ -57,7 +58,7 @@ impl UsbReader {
                 .read_serial_number_string(language, &device_desc, timeout)
                 .unwrap_or("Serial Num Not Found".to_string());
 
-            println!("language: {language:?}\n mfg info: {mfg_info}\n product info: {product_info}\n serial num: {serial_num}");
+            println!("language: {primary_lang:?}\n mfg info: {mfg_info}\n product info: {product_info}\n serial num: {serial_num}");
         }
 
         Ok(())
